@@ -37,9 +37,19 @@ async function authorize() {
 }
 
 /**
- * Constructs a Gmail search query from multiple search criteria.
- * @param {Object} criteria Criteria to include in search (keyword, from, to, label, startDate, endDate).
- * @returns {string} Constructed search query string.
+ * Constructs a Gmail search query string from provided search criteria.
+ * This function builds a query string that can be used with the Gmail API to
+ * filter results based on specific fields like keywords in the email body or subject,
+ * sender, recipient, label, and date ranges.
+ *
+ * @param {Object} criteria - An object containing the search criteria.
+ * @param {string} [criteria.keyword] - Keyword to search in the body or subject of the email.
+ * @param {string} [criteria.from] - Email address of the sender to filter results.
+ * @param {string} [criteria.to] - Email address of the recipient to filter results.
+ * @param {string} [criteria.label] - Label to filter the emails.
+ * @param {string} [criteria.startDate] - Start date to filter emails that are newer (format: YYYY/MM/DD).
+ * @param {string} [criteria.endDate] - End date to filter emails that are older (format: YYYY/MM/DD).
+ * @returns {string} - A string that represents the Gmail search query based on the given criteria.
  */
 function constructSearchQuery(criteria) {
   const queryParts = [];
@@ -70,7 +80,7 @@ function constructSearchQuery(criteria) {
 /**
  * Format data according to specified format.
  * @param {Array} data Data to format.
- * @param {String} format Format to use (json, csv, text, table, markdown).
+ * @param {String} formatType Format to use (json, csv, text, table, markdown).
  */
 function formatOutput(data, formatType) {
   switch (formatType) {
@@ -78,35 +88,44 @@ function formatOutput(data, formatType) {
       console.log(JSON.stringify(data, null, 2));
       break;
     case "csv":
+      if (data.length === 0) {
+        console.log("No data available.");
+        return;
+      }
       const headers = Object.keys(data[0]);
       console.log(headers.join(","));
-      data.forEach((item) => {
-        console.log(headers.map((header) => item[header]).join(","));
-      });
+      data.forEach((item) => console.log(headers.map((header) => `"${item[header]}"`).join(",")));
       break;
     case "text":
-      data.forEach((item) => {
-        console.log(format("%s from %s on %s: %s", item.subject, item.from, item.date, item.snippet));
-      });
+      data.forEach((item) =>
+        console.log(format("%s from %s on %s: %s", item.subject, item.from, item.date, item.snippet))
+      );
       break;
     case "table":
       const p = new Table({
-        columns: [
-          { name: "subject", alignment: "left" },
-          { name: "from", alignment: "left" },
-          { name: "date", alignment: "left" },
-          { name: "snippet", alignment: "left" },
-        ],
+        columns: Object.keys(data[0]).map((key) => ({ name: key, alignment: "left" })),
       });
       p.addRows(data);
       p.printTable();
       break;
     case "markdown":
-      console.log("| Subject | From | Date | Snippet |");
-      console.log("|---------|------|------|---------|");
-      data.forEach((item) => {
-        console.log(`| ${item.subject} | ${item.from} | ${item.date} | ${item.snippet} |`);
-      });
+      console.log("| " + Object.keys(data[0]).join(" | ") + " |");
+      console.log(
+        "|" +
+          Object.keys(data[0])
+            .map(() => "---")
+            .join("|") +
+          "|"
+      );
+      data.forEach((item) =>
+        console.log(
+          "| " +
+            Object.keys(item)
+              .map((key) => item[key])
+              .join(" | ") +
+            " |"
+        )
+      );
       break;
     default:
       console.error("Invalid format specified");
@@ -170,19 +189,32 @@ async function saveCredentials(client) {
 }
 
 /**
- * Searches emails in the user's Gmail inbox based on provided criteria and displays detailed information.
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- * @param {Object} criteria Search criteria.
- * @returns {Promise<Array>} List of email messages that match the criteria, with detailed information.
+ * Searches emails in the user's Gmail inbox based on provided criteria and fetches detailed information
+ * for each message. The detailed information includes fields such as the message ID, thread ID, snippet,
+ * sender, subject, and date. This function first lists messages that match the search criteria, then
+ * fetches each message's details via separate API calls.
+ *
+ * @param {google.auth.OAuth2} auth - An authorized OAuth2 client instance to authenticate the request.
+ * @param {Object} criteria - Search criteria used to filter messages.
+ * @param {string} [criteria.keyword] - Keyword to search in the body or subject of the email.
+ * @param {string} [criteria.from] - Email address of the sender to filter results.
+ * @param {string} [criteria.to] - Email address of the recipient to filter results.
+ * @param {string} [criteria.label] - Label to filter the emails.
+ * @param {string} [criteria.startDate] - Start date to filter emails that are newer.
+ * @param {string} [criteria.endDate] - End date to filter emails that are older.
+ * @param {number} [criteria.limit] - Maximum number of results to return.
+ * @returns {Promise<Array>} - A promise that resolves to an array of objects, each representing detailed information about an email.
+ * @throws {Error} - Throws an error if the API returns an error or if the query fails to execute.
  */
-async function searchEmails(auth, criteria) {
+async function searchEmails(auth, { keyword, from, to, label, startDate, endDate, limit }) {
   const gmail = google.gmail({ version: "v1", auth });
-  const query = constructSearchQuery(criteria);
+  const query = constructSearchQuery({ keyword, from, to, label, startDate, endDate });
 
   try {
     const listResponse = await gmail.users.messages.list({
       userId: "me",
       q: query,
+      maxResults: limit || 500,
     });
 
     if (!listResponse.data.messages) {
@@ -191,7 +223,7 @@ async function searchEmails(auth, criteria) {
     }
 
     const messages = listResponse.data.messages;
-    console.log(`Found ${messages.length} messages. Fetching details...`);
+    // console.log(`Found ${messages.length} messages. Fetching details...`);
 
     const detailedMessages = await Promise.all(
       messages.map(async (message) => {
@@ -253,12 +285,16 @@ const labels = program.command("labels").description("Operations related to labe
 labels
   .command("list")
   .description("List all labels.")
-  .action(async () => {
+  .option("--output <format>", "Output format: json, csv, text, table, markdown", "json")
+  .action(async (options) => {
     const auth = await authorize();
-    await listLabels(auth);
+    const labels = await listLabels(auth);
+    formatOutput(
+      labels.map((label) => ({ name: label.name })),
+      options.output
+    );
   });
 
-// Search emails command under Gmail
 const emails = program.command("emails").description("Operations related to emails");
 emails
   .command("search")
@@ -270,6 +306,7 @@ emails
   .option("--startDate <date>", "Start date for the email search")
   .option("--endDate <date>", "End date for the email search")
   .option("--output <format>", "Output format: json, csv, text, table, markdown", "json")
+  .option("--limit <number>", "Limit the number of results", parseInt)
   .action(async (options) => {
     const criteria = {
       keyword: options.keyword,
@@ -278,9 +315,13 @@ emails
       label: options.label,
       startDate: options.startDate,
       endDate: options.endDate,
+      limit: options.limit,
     };
     const auth = await authorize();
-    const messages = await searchEmails(auth, criteria);
+    let messages = await searchEmails(auth, criteria);
+    if (options.limit) {
+      messages = messages.slice(0, options.limit);
+    }
     formatOutput(messages, options.output);
   });
 
