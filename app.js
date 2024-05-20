@@ -6,13 +6,11 @@ const process = require("process");
 const { authenticate } = require("@google-cloud/local-auth");
 const { google } = require("googleapis");
 const { program } = require("commander");
-const { createWriteStream } = require("fs");
 const { format } = require("util");
-const { Table } = require("console-table-printer"); // npm install console-table-printer for table output
+const { Table } = require("console-table-printer");
 
 program.version("1.0.0").description("CLI tool for Gmail operations");
 
-// If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
 const TOKEN_PATH = path.join(process.cwd(), "token.json");
 const CREDENTIALS_PATH = path.join(process.cwd(), "credentials.json");
@@ -223,8 +221,6 @@ async function searchEmails(auth, { keyword, from, to, label, startDate, endDate
     }
 
     const messages = listResponse.data.messages;
-    // console.log(`Found ${messages.length} messages. Fetching details...`);
-
     const detailedMessages = await Promise.all(
       messages.map(async (message) => {
         const msgResponse = await gmail.users.messages.get({
@@ -256,7 +252,7 @@ async function searchEmails(auth, { keyword, from, to, label, startDate, endDate
 
 const auth = program.command("auth").description("Authentication management");
 auth
-  .command("setup")
+  .command("login")
   .description("Setup or refresh authentication credentials.")
   .action(async () => {
     const client = await authenticate({
@@ -265,19 +261,18 @@ auth
     });
     if (client.credentials) {
       await saveCredentials(client);
-      console.log("Authentication successful and saved.");
+      console.log("Logged in successfully.");
     }
   });
-
 auth
-  .command("clear")
+  .command("logout")
   .description("Clear saved authentication credentials.")
   .action(async () => {
     try {
       await fs.unlink(TOKEN_PATH);
-      console.log("Credentials cleared successfully.");
+      console.log("Logged out successfully.");
     } catch (error) {
-      console.error("Failed to clear credentials:", error);
+      console.error("Failed to logout:", error);
     }
   });
 
