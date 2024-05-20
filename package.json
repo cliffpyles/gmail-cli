@@ -1,20 +1,26 @@
 {
-  "name": "gmailfetcher",
+  "name": "gmail-cli",
+  "description": "A command-line tool for interacting with Gmail via the Gmail API.",
   "version": "1.0.0",
-  "main": "index.js",
+  "author": "Cliff Pyles <cliff@cliffpyles.com>",
+  "license": "MIT",
+  "keywords": [
+    "gmail",
+    "cli",
+    "email"
+  ],
+  "main": "app.js",
+  "bin": {
+    "gmail": "./app.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "http-server -p 3000"
   },
-  "keywords": [],
-  "author": "Cliff Pyles <cliff@cliffpyles.com>",
-  "license": "MIT",
-  "description": "",
   "dependencies": {
     "@google-cloud/local-auth": "^2.1.0",
     "commander": "^12.1.0",
     "console-table-printer": "^2.12.0",
-    "googleapis": "^105.0.0",
-    "http-server": "^14.1.1"
+    "googleapis": "^105.0.0"
   }
 }
