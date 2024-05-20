@@ -46,21 +46,21 @@ To use this tool, ensure you have the following:
 
 ## Usage
 
-### Managing Authentication
+### Authentication Management
 
-- **Set Up or Refresh Authentication Credentials**
+- **Log In and Save Authentication Credentials**
 
   ```bash
-  gmail auth setup
+  gmail auth login
   ```
 
-  This command configures your credentials for use with the Gmail API, storing them for future sessions.
+  This command initializes the OAuth process, saves the credentials upon successful authentication, and prepares the tool for accessing Gmail features.
 
-- **Clear Saved Authentication Credentials**
+- **Log Out and Clear Authentication Credentials**
   ```bash
-  gmail auth clear
+  gmail auth logout
   ```
-  Use this command to remove saved credentials from your system.
+  Use this command to remove stored credentials from your system, effectively logging you out and securing your session.
 
 ### Listing Labels
 
