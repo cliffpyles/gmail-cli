@@ -74,7 +74,7 @@ To use this tool, ensure you have the following:
 
 - **Search Emails Based on Criteria**
   ```bash
-  gmail emails search --keyword "<keyword>" --from "<email>" --to "<email>" --label "<label>" --startDate "YYYY-MM-DD" --endDate "YYYY-MM-DD" --output <format> --limit <number>
+  gmail emails search --keyword "<keyword>" --from "<email>" --to "<email>" --label "<label>" --startDate "YYYY-MM-DD" --endDate "YYYY-MM-DD" --output <format> --limit <number> --batch-size <size>
   ```
   Use this command to search for emails that match specified criteria. Here's a breakdown of the options:
   - `--keyword <keyword>`: Search for this keyword within the email body or subject.
@@ -84,6 +84,7 @@ To use this tool, ensure you have the following:
   - `--startDate "YYYY-MM-DD"` and `--endDate "YYYY-MM-DD"`: Specify a date range for filtering emails.
   - `--output <format>`: Choose the format for the search results output. Options are `json`, `csv`, `text`, `table`, and `markdown`.
   - `--limit <number>`: Limit the number of results returned.
+  - `--batch-size <size>`: Break the search into batches, specified either as a number of batches or a time interval (e.g., '3' for three batches, '1 month' for monthly batches).
 
 ## Disclaimers
 

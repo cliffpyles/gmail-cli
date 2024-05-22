@@ -1,4 +1,4 @@
-#! /usr/bin/env node
+#!/usr/bin/env node
 
 const fs = require("fs").promises;
 const path = require("path");
@@ -8,7 +8,7 @@ const { google } = require("googleapis");
 const { program } = require("commander");
 const { format } = require("util");
 const { Table } = require("console-table-printer");
-
+const { parse, add, differenceInCalendarDays } = require("date-fns");
 program.version("1.0.0").description("CLI tool for Gmail operations");
 
 const SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
@@ -168,6 +168,54 @@ async function loadSavedCredentialsIfExist() {
 }
 
 /**
+ * Parses batch size and unit, or returns an integer count for equal batch partitioning.
+ * @param {string|number} batchSize - Batch size in days, weeks, months or integer for equal division.
+ * @param {string} startDate - Start date in ISO format.
+ * @param {string} endDate - End date in ISO format.
+ * @returns {Array} Array of date intervals { start: Date, end: Date }
+ */
+function parseBatchSize(batchSize, startDate, endDate) {
+  const start = parse(startDate, "yyyy-MM-dd", new Date());
+  const end = parse(endDate, "yyyy-MM-dd", new Date());
+
+  const intervals = [];
+
+  if (Number.isInteger(Number(batchSize))) {
+    const totalDays = differenceInCalendarDays(end, start);
+    const daysPerBatch = Math.floor(totalDays / batchSize);
+
+    let currentStart = start;
+    for (let i = 0; i < batchSize; i++) {
+      let currentEnd = add(currentStart, { days: daysPerBatch });
+      if (i === batchSize - 1) {
+        currentEnd = end;
+      }
+      intervals.push({ start: currentStart, end: currentEnd });
+      currentStart = add(currentEnd, { days: 1 });
+    }
+  } else {
+    const [amount, unit] = batchSize.split(" ");
+    const duration = {};
+    const normalizedUnit = unit.endsWith("s") ? unit : `${unit}s`;
+    duration[normalizedUnit] = parseInt(amount);
+
+    const incrementDate = (date) => add(date, duration);
+
+    let currentStart = start;
+    while (currentStart < end) {
+      let nextStart = incrementDate(currentStart);
+      intervals.push({ start: currentStart, end: nextStart > end ? end : nextStart });
+      currentStart = nextStart;
+    }
+  }
+
+  return intervals.map((interval) => ({
+    start: interval.start,
+    end: interval.end,
+  }));
+}
+
+/**
  * Serializes credentials to a file compatible with GoogleAuth.fromJSON.
  *
  * @param {OAuth2Client} client
@@ -216,7 +264,6 @@ async function searchEmails(auth, { keyword, from, to, label, startDate, endDate
     });
 
     if (!listResponse.data.messages) {
-      console.log("No messages found.");
       return [];
     }
 
@@ -302,6 +349,7 @@ emails
   .option("--endDate <date>", "End date for the email search")
   .option("--output <format>", "Output format: json, csv, text, table, markdown", "json")
   .option("--limit <number>", "Limit the number of results", parseInt)
+  .option("--batch-size <size>", "Break search into batches, size in number or unit (e.g., '1 month')", 1)
   .action(async (options) => {
     const criteria = {
       keyword: options.keyword,
@@ -313,11 +361,20 @@ emails
       limit: options.limit,
     };
     const auth = await authorize();
-    let messages = await searchEmails(auth, criteria);
-    if (options.limit) {
-      messages = messages.slice(0, options.limit);
+    const dateRanges = parseBatchSize(options.batchSize, options.startDate, options.endDate);
+    let allMessages = [];
+
+    for (const range of dateRanges) {
+      criteria.startDate = range.start.toISOString().slice(0, 10);
+      criteria.endDate = range.end.toISOString().slice(0, 10);
+      const messages = await searchEmails(auth, criteria);
+      allMessages.push(...messages);
     }
-    formatOutput(messages, options.output);
+
+    if (options.limit) {
+      allMessages = allMessages.slice(0, options.limit);
+    }
+    formatOutput(allMessages, options.output);
   });
 
 program.parse(process.argv);
