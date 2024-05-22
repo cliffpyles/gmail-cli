@@ -274,7 +274,7 @@ async function searchEmails(auth, { keyword, from, to, label, startDate, endDate
           userId: "me",
           id: message.id,
           format: "metadata",
-          metadataHeaders: ["From", "Subject", "Date"],
+          metadataHeaders: ["From", "To", "Subject", "Date"],
         });
 
         const headers = msgResponse.data.payload.headers;
@@ -283,6 +283,7 @@ async function searchEmails(auth, { keyword, from, to, label, startDate, endDate
           threadId: message.threadId,
           snippet: msgResponse.data.snippet,
           from: headers.find((header) => header.name === "From")?.value,
+          to: headers.find((header) => header.name === "To")?.value,
           subject: headers.find((header) => header.name === "Subject")?.value,
           date: headers.find((header) => header.name === "Date")?.value,
         };
