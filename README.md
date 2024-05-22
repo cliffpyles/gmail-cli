@@ -68,7 +68,7 @@ To use this tool, ensure you have the following:
   ```bash
   gmail labels list --output <format>
   ```
-  This command lists all labels in your Gmail account. You can specify the output format using the `--output` option. Available formats include `json`, `csv`, `text`, `table`, and `markdown`.
+  This command lists all labels in your Gmail account. You can specify the output format using the `--output` option. Available formats include `json`, `jsonl`, `csv`, `text`, `table`, and `markdown`.
 
 ### Searching Emails
 
@@ -82,7 +82,7 @@ To use this tool, ensure you have the following:
   - `--to <email>`: Filter emails sent to a specific address.
   - `--label <label>`: Filter emails by Gmail label.
   - `--startDate "YYYY-MM-DD"` and `--endDate "YYYY-MM-DD"`: Specify a date range for filtering emails.
-  - `--output <format>`: Choose the format for the search results output. Options are `json`, `csv`, `text`, `table`, and `markdown`.
+  - `--output <format>`: Choose the format for the search results output. Options are `json`, `jsonl`, `csv`, `text`, `table`, and `markdown`.
   - `--limit <number>`: Limit the number of results returned.
   - `--batch-size <size>`: Break the search into batches, specified either as a number of batches or a time interval (e.g., '3' for three batches, '1 month' for monthly batches).
 

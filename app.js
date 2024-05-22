@@ -125,6 +125,11 @@ function formatOutput(data, formatType) {
         )
       );
       break;
+    case "jsonl":
+      data.forEach((item) => {
+        console.log(JSON.stringify(item));
+      });
+      break;
     default:
       console.error("Invalid format specified");
       break;
@@ -328,7 +333,7 @@ const labels = program.command("labels").description("Operations related to labe
 labels
   .command("list")
   .description("List all labels.")
-  .option("--output <format>", "Output format: json, csv, text, table, markdown", "json")
+  .option("--output <format>", "Output format: json, jsonl, csv, text, table, markdown", "json")
   .action(async (options) => {
     const auth = await authorize();
     const labels = await listLabels(auth);
@@ -348,7 +353,7 @@ emails
   .option("--label <string>", "Gmail label")
   .option("--startDate <date>", "Start date for the email search")
   .option("--endDate <date>", "End date for the email search")
-  .option("--output <format>", "Output format: json, csv, text, table, markdown", "json")
+  .option("--output <format>", "Output format: json, jsonl, csv, text, table, markdown", "json")
   .option("--limit <number>", "Limit the number of results", parseInt)
   .option("--batch-size <size>", "Break search into batches, size in number or unit (e.g., '1 month')", 1)
   .action(async (options) => {
