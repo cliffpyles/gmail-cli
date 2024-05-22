@@ -86,6 +86,58 @@ To use this tool, ensure you have the following:
   - `--limit <number>`: Limit the number of results returned.
   - `--batch-size <size>`: Break the search into batches, specified either as a number of batches or a time interval (e.g., '3' for three batches, '1 month' for monthly batches).
 
+### Example Usages
+
+#### 1. **Simple Email Search**
+
+Search for all emails from "example@domain.com" between January 1, 2023, and January 31, 2023, outputting the results in JSON format:
+
+```bash
+gmail emails search --from "example@domain.com" --startDate "2023-01-01" --endDate "2023-01-31" --output json
+```
+
+This command will search for emails sent from the specified address within the given date range and display the results in JSON format.
+
+#### 2. **Batched Email Search with Time Interval**
+
+Search for emails using a specific keyword "urgent" over a three-month period, batched into monthly searches:
+
+```bash
+gmail emails search --keyword "urgent" --startDate "2023-01-01" --endDate "2023-03-31" --batch-size "1 month" --output table
+```
+
+This command will break down the search into monthly intervals, searching for emails that contain the keyword "urgent" in each month separately, and display results in a table format.
+
+#### 3. **Batched Email Search with Numeric Division**
+
+Search for emails between two individuals over a year, divided into 4 quarterly searches:
+
+```bash
+gmail emails search --from "user1@domain.com" --to "user2@domain.com" --startDate "2023-01-01" --endDate "2023-12-31" --batch-size 4 --output markdown
+```
+
+This command will divide the year into four equal periods and perform the search for emails exchanged between the two specified addresses over each quarter, displaying the results in markdown format.
+
+#### 4. **Logout and Clear Credentials**
+
+Clear stored credentials to secure the session after your operations:
+
+```bash
+gmail auth logout
+```
+
+This command removes stored authentication credentials, effectively logging out the user and securing the session.
+
+#### 5. **Listing Email Labels**
+
+List all labels in your Gmail account in a table format:
+
+```bash
+gmail labels list --output table
+```
+
+This command lists all available Gmail labels in a table format, making it easy to view and manage your email categorizations.
+
 ## Disclaimers
 
 This tool is provided as-is, without warranty of any kind. It is not intended for public use and no support or maintenance will be provided. Users must follow all guidelines and best practices provided by Google for using Gmail API resources, including managing and safeguarding authentication credentials.
